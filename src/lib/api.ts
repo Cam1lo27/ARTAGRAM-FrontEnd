@@ -19,8 +19,8 @@ api.interceptors.request.use((config) => {
 api.interceptors.response.use(
   (respuesta) => respuesta,
   (error) => {
-    if (error.response?.status === 401) {
-      useAuthStore.getState().cerrarSesion();
+    if (error.response?.status === 401 && useAuthStore.getState().sesion) {
+      useAuthStore.getState().expirarSesion();
     }
     return Promise.reject(error);
   },

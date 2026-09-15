@@ -3,6 +3,7 @@ import { api, extraerMensajeError } from '../../lib/api';
 import { stompService } from '../../lib/stompClient';
 import { useAuthStore } from '../../lib/authStore';
 import { Button } from '../../components/ui/Button';
+import { FondoEstudio } from '../../components/layout/FondoEstudio';
 import { TextField } from '../../components/ui/TextField';
 import type { MensajePersonalDto, PerfilResponse } from '../../types';
 
@@ -52,6 +53,7 @@ export function PersonalChatPage() {
   }
 
   return (
+    <FondoEstudio>
     <div className="mx-auto max-w-2xl px-4 py-8">
       <h1 className="mb-4 font-display text-2xl font-semibold">Mensajes</h1>
       <form onSubmit={buscarYAbrir} className="card mb-4 flex items-end gap-2 p-4">
@@ -88,5 +90,6 @@ export function PersonalChatPage() {
         </div>
       )}
     </div>
+    </FondoEstudio>
   );
 }

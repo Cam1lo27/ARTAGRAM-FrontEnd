@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { api, extraerMensajeError } from '../../lib/api';
 import { Button } from '../../components/ui/Button';
+import { FondoEstudio } from '../../components/layout/FondoEstudio';
 import { TextField } from '../../components/ui/TextField';
 import type { ComunidadResponse } from '../../types';
 
@@ -57,6 +58,7 @@ export function CommunityListPage() {
   }
 
   return (
+    <FondoEstudio>
     <div className="mx-auto max-w-5xl px-4 py-8">
       <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
         <div>
@@ -113,19 +115,30 @@ export function CommunityListPage() {
         <EstadoVacio />
       ) : (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {comunidades.map((c) => (
-            <Link key={c.id} to={`/comunidades/${c.id}`} className="card group p-5 transition-transform hover:-translate-y-0.5">
-              <div className="mb-3 flex items-center justify-between">
-                <span className="chip">{c.miRol ?? 'miembro'}</span>
-                <span className="text-xs text-paper-dim">{c.totalMiembros} miembros</span>
-              </div>
-              <h3 className="font-display text-lg font-semibold group-hover:text-coral">{c.nombre}</h3>
-              <p className="mt-1 line-clamp-2 text-sm text-paper-muted">{c.descripcion || 'Sin descripción'}</p>
-            </Link>
+          {comunidades.map((c, i) => (
+            <motion.div
+              key={c.id}
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.25, delay: i * 0.05 }}
+            >
+              <Link
+                to={`/comunidades/${c.id}`}
+                className="card group block h-full p-5 transition-transform hover:-translate-y-1 hover:shadow-lg"
+              >
+                <div className="mb-3 flex items-center justify-between">
+                  <span className="chip">{c.miRol ?? 'miembro'}</span>
+                  <span className="text-xs text-paper-dim">{c.totalMiembros} miembros</span>
+                </div>
+                <h3 className="font-display text-lg font-semibold group-hover:text-coral">{c.nombre}</h3>
+                <p className="mt-1 line-clamp-2 text-sm text-paper-muted">{c.descripcion || 'Sin descripción'}</p>
+              </Link>
+            </motion.div>
           ))}
         </div>
       )}
     </div>
+    </FondoEstudio>
   );
 }
 

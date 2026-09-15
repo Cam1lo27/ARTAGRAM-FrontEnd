@@ -1,5 +1,6 @@
 import { type ReactNode } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { motion } from 'framer-motion';
 import { useAuthStore } from '../../lib/authStore';
 import { Button } from '../ui/Button';
 
@@ -14,6 +15,7 @@ export function AppShell({ children }: { children: ReactNode }) {
   const sesion = useAuthStore((s) => s.sesion);
   const cerrarSesion = useAuthStore((s) => s.cerrarSesion);
   const navigate = useNavigate();
+  const location = useLocation();
   const enlacesVisibles = sesion?.rolGlobal === 'ADMIN' ? [...enlaces, { a: '/admin', texto: 'Admin' }] : enlaces;
 
   return (
@@ -21,25 +23,39 @@ export function AppShell({ children }: { children: ReactNode }) {
       <header className="sticky top-0 z-40 border-b border-paper/10 bg-ink-950/35 backdrop-blur-lg">
         <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3 sm:px-6">
           <Link to="/feed" className="flex items-center gap-2 group">
-            <img
+            <motion.img
               src="/favicon.svg"
               alt="Artagram"
-              className="h-8 w-8 transition-transform group-hover:scale-105"
+              className="h-8 w-8"
+              whileHover={{ scale: 1.1, rotate: -8 }}
+              transition={{ type: 'spring', stiffness: 300, damping: 15 }}
             />
             <span className="font-display text-lg font-semibold tracking-tight">Artagram</span>
           </Link>
 
           {sesion && (
             <nav className="hidden items-center gap-1 md:flex">
-              {enlacesVisibles.map((e) => (
-                <Link
-                  key={e.a}
-                  to={e.a}
-                  className="rounded-lg px-3 py-2 text-sm font-medium text-paper-muted transition-colors hover:bg-ink-800 hover:text-paper"
-                >
-                  {e.texto}
-                </Link>
-              ))}
+              {enlacesVisibles.map((e) => {
+                const activo = location.pathname === e.a || location.pathname.startsWith(e.a + '/');
+                return (
+                  <Link
+                    key={e.a}
+                    to={e.a}
+                    className={`relative rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
+                      activo ? 'text-paper' : 'text-paper-muted hover:text-paper'
+                    }`}
+                  >
+                    {activo && (
+                      <motion.span
+                        layoutId="nav-activo"
+                        className="absolute inset-0 rounded-lg bg-ink-800"
+                        transition={{ type: 'spring', stiffness: 400, damping: 32 }}
+                      />
+                    )}
+                    <span className="relative">{e.texto}</span>
+                  </Link>
+                );
+              })}
             </nav>
           )}
 

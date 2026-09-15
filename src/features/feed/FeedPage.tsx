@@ -3,6 +3,7 @@ import { AnimatePresence } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import { api, extraerMensajeError } from '../../lib/api';
 import { Button } from '../../components/ui/Button';
+import { FondoEstudio } from '../../components/layout/FondoEstudio';
 import { PostCard } from './PostCard';
 import { PublishWizard } from './PublishWizard';
 import type { FeedResponse, PublicacionDto } from '../../types';
@@ -43,6 +44,7 @@ export function FeedPage() {
   }
 
   return (
+    <FondoEstudio>
     <div className="mx-auto max-w-2xl px-4 py-8">
       <div className="mb-6 flex items-center justify-between">
         <div>
@@ -103,5 +105,6 @@ export function FeedPage() {
         </div>
       )}
     </div>
+    </FondoEstudio>
   );
 }

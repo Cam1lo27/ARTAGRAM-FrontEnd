@@ -1,4 +1,5 @@
-import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
+import { BrowserRouter, Navigate, Route, Routes, useLocation } from 'react-router-dom';
+import { AnimatePresence, motion } from 'framer-motion';
 import { AppShell } from './components/layout/AppShell';
 import { ProtectedRoute } from './components/layout/ProtectedRoute';
 import { AdminRoute } from './components/layout/AdminRoute';
@@ -17,11 +18,24 @@ import { PartyRoomPage } from './features/party/PartyRoomPage';
 import { PersonalChatPage } from './features/chat/PersonalChatPage';
 import { AdminDashboardPage } from './features/admin/AdminDashboardPage';
 
-function App() {
+/**
+ * Transición entre páginas: la clave de framer-motion es location.pathname,
+ * no las rutas en sí — así cualquier navegación (incluida la de los guards)
+ * dispara el mismo fundido/deslizamiento sin tener que envolver cada página
+ * una por una.
+ */
+function AnimatedRoutes() {
+  const location = useLocation();
   return (
-    <BrowserRouter>
-      <AppShell>
-        <Routes>
+    <AnimatePresence mode="wait" initial={false}>
+      <motion.div
+        key={location.pathname}
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        exit={{ opacity: 0, y: -10 }}
+        transition={{ duration: 0.2, ease: 'easeInOut' }}
+      >
+        <Routes location={location}>
           <Route path="/" element={<LandingPage />} />
           <Route path="/registro" element={<RegisterPage />} />
           <Route path="/login" element={<LoginPage />} />
@@ -44,6 +58,16 @@ function App() {
 
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
+      </motion.div>
+    </AnimatePresence>
+  );
+}
+
+function App() {
+  return (
+    <BrowserRouter>
+      <AppShell>
+        <AnimatedRoutes />
       </AppShell>
     </BrowserRouter>
   );

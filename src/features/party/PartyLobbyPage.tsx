@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { api, extraerMensajeError } from '../../lib/api';
 import { Button } from '../../components/ui/Button';
+import { FondoEstudio } from '../../components/layout/FondoEstudio';
 import { TextField } from '../../components/ui/TextField';
 import type { SalaFiestaResponse } from '../../types';
 
@@ -44,6 +45,7 @@ export function PartyLobbyPage() {
   }
 
   return (
+    <FondoEstudio>
     <div className="mx-auto max-w-4xl px-4 py-10">
       <div className="mb-8 text-center">
         <span className="chip mb-3 inline-block border-amber/40 text-amber">Rondas cronometradas</span>
@@ -105,5 +107,6 @@ export function PartyLobbyPage() {
 
       {error && <p className="mt-6 rounded-lg bg-coral/10 px-3 py-2 text-center text-sm text-coral-light">{error}</p>}
     </div>
+    </FondoEstudio>
   );
 }

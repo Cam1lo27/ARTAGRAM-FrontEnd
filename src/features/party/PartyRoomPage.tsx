@@ -4,7 +4,9 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { api, extraerMensajeError } from '../../lib/api';
 import { stompService } from '../../lib/stompClient';
 import { useAuthStore } from '../../lib/authStore';
+import { FondoEstudio } from '../../components/layout/FondoEstudio';
 import { dibujarBorrado, dibujarTrazoCompleto } from '../../lib/canvasEngine';
+import { CodigoSalaBadge } from './CodigoSalaBadge';
 import type { EstadoRondaResponse, PartyEvento, PartyTrazoDto, Punto, SalaFiestaResponse } from '../../types';
 
 const GROSOR_BORRADOR = 40;
@@ -197,20 +199,23 @@ export function PartyRoomPage() {
 
   if (error) {
     return (
+      <FondoEstudio>
       <div className="mx-auto max-w-lg px-4 py-24 text-center">
         <p className="text-coral-light">{error}</p>
         <Link to="/fiesta" className="btn-secondary mt-4">
           Volver al lobby
         </Link>
       </div>
+      </FondoEstudio>
     );
   }
 
   return (
+    <FondoEstudio>
     <div className="mx-auto max-w-5xl px-4 py-6">
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
         <div>
-          <p className="label">Modo fiesta {sala && `· código ${sala.codigo}`}</p>
+          <p className="label">Modo fiesta</p>
           <h1 className="font-display text-2xl font-semibold">
             Sala de {sala?.anfitrionNombre ?? '…'} {sala && <span className="text-base font-normal text-paper-muted">· {sala.totalParticipantes} en la sala</span>}
           </h1>
@@ -219,6 +224,12 @@ export function PartyRoomPage() {
           ← Salir de la sala
         </Link>
       </div>
+
+      {sala && (
+        <div className="mb-4">
+          <CodigoSalaBadge codigo={sala.codigo} />
+        </div>
+      )}
 
       <div className="mb-4 flex flex-wrap items-center justify-between gap-4">
         <div
@@ -293,5 +304,6 @@ export function PartyRoomPage() {
         />
       </div>
     </div>
+    </FondoEstudio>
   );
 }
