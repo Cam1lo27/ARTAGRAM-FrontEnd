@@ -92,7 +92,11 @@ export function FeedPage() {
       ) : (
         <div className="flex flex-col gap-6">
           {publicaciones.map((p) => (
-            <PostCard key={p.id} publicacion={p} />
+            <PostCard
+              key={p.id}
+              publicacion={p}
+              onEliminada={(id) => setPublicaciones((prev) => prev.filter((x) => x.id !== id))}
+            />
           ))}
         </div>
       )}

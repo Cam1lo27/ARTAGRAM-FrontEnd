@@ -40,7 +40,7 @@ src/
     canvas/                 estudio de lienzo colaborativo y banner mural (motor de canvas 2D)
     party/                  modo fiesta: lobby, sala con reloj sincronizado
     chat/                   chat personal
-    feed/                   feed paginado, publicar obra, likes
+    feed/                   feed paginado, publicar/eliminar obra, likes
     admin/                  panel de administración (KPIs)
   lib/
     api.ts                 cliente Axios (base URL, interceptor de JWT, manejo de 401 → cierre de sesión)
@@ -107,9 +107,75 @@ En Docker, esas mismas variables se hornean en el build de la imagen vía `ARG`/
 (ver `Dockerfile`) — cambiar el backend de destino después de construida la imagen
 requiere reconstruirla, no es una variable de entorno de runtime del contenedor Nginx.
 
+## Pruebas
+
+```bash
+npm run test            # Vitest, una sola corrida
+npm run test:coverage   # + reporte de cobertura (texto en consola + HTML)
+```
+
+El grueso de la cobertura automatizada del proyecto vive en el backend (59 pruebas,
+Testcontainers con Postgres/Redis reales — ver el README de `ARTAGRAM-BackEnd`), que es
+donde vive toda la lógica de dominio y concurrencia. Acá en el frontend, Vitest cubre los
+dos módulos de `src/lib` que tienen lógica pura verificable sin levantar toda la UI:
+
+- **`canvasEngine.ts` (100% de cobertura)**: que cada tipo de pincel (lápiz, marcador,
+  acuarela) configure el `CanvasRenderingContext2D` como corresponde (composite
+  operation, opacidad, blur), que un trazo de N puntos dibuje exactamente N-1 segmentos
+  en orden, y que el borrador del modo fiesta use `destination-out` en vez de agregar
+  color.
+- **`authStore.ts` (93% de cobertura)**: que `iniciarSesion`/`cerrarSesion`/
+  `expirarSesion` sincronicen correctamente el store de Zustand con `localStorage`, y
+  en particular que `expirarSesion` (sesión vencida) y `cerrarSesion` (logout manual)
+  se comporten distinto donde importa — la primera deja prendido el aviso de "tu sesión
+  expiró" para el login, la segunda no.
+
+El resto de la UI (páginas, componentes) no tiene pruebas automatizadas — se verificó a
+mano en el navegador durante el desarrollo (ver los flujos de tiempo real en el README de
+`ARTAGRAM-Infraestructure`). Agregar React Testing Library para los componentes queda
+como mejora futura, fuera de alcance de esta entrega.
+
 ## CI/CD
 
 `.github/workflows/docker-publish.yml`: en cada push a `main`/`master`, construye la
 imagen (con `npm run build` dentro del Dockerfile) y la publica en
 `ghcr.io/<owner>/artagram-frontend:latest` usando el `GITHUB_TOKEN` que inyecta GitHub
-Actions automáticamente.
+Actions automáticamente. Esa imagen Docker es para el despliegue vía
+`ARTAGRAM-Infraestructure` (Docker Compose) — para Vercel no hace falta, Vercel construye
+directo desde el código fuente (ver abajo).
+
+## Despliegue en Vercel
+
+Vercel detecta Vite automáticamente; `vercel.json` en la raíz de este repo ya deja
+resuelto lo que Vercel no adivina solo:
+
+- **Rewrite a `index.html`** para todas las rutas — sin esto, entrar directo a
+  `/feed` o refrescar en `/comunidades/:id` da 404 (Vercel por defecto sirve archivos
+  estáticos 1:1, no sabe que esas rutas las resuelve React Router en el navegador).
+- **Cache-Control**: `no-cache` en `index.html` (para que un redeploy se note de
+  inmediato) e inmutable/1 año en `/assets/*` (los nombres ya llevan hash de contenido,
+  así que cachearlos para siempre es seguro) — el mismo criterio que ya usa `nginx.conf`
+  para el despliegue con Docker.
+
+### Pasos
+
+1. **Importar este repositorio en Vercel** (New Project → seleccionar
+   `ARTAGRAM-FrontEnd`). Framework preset: Vite (autodetectado). Build command y output
+   directory ya quedan fijados por `vercel.json` (`npm run build` / `dist`).
+2. **Variables de entorno** (Project Settings → Environment Variables) — apuntando al
+   backend ya desplegado en Azure:
+
+   | Variable | Valor |
+   |---|---|
+   | `VITE_API_BASE_URL` | `https://<tu-web-app>.azurewebsites.net` |
+   | `VITE_WS_URL` | `wss://<tu-web-app>.azurewebsites.net/ws` (con `wss://`, no `ws://` — el backend en Azure sirve por HTTPS) |
+
+   Estas variables se hornean en el build (son `VITE_*`), así que cambiarlas requiere
+   un **Redeploy** desde Vercel, no solo guardar el cambio.
+3. **CORS**: la URL que asigne Vercel (`https://<proyecto>.vercel.app`, o el dominio
+   propio si se configura uno) tiene que estar en `CORS_ORIGINS` del backend en Azure —
+   si no, el navegador bloquea las respuestas aunque el backend funcione bien.
+4. Las *preview deployments* de Vercel (una URL distinta por cada PR) van a fallar por
+   CORS contra el backend de producción a menos que también se agreguen a
+   `CORS_ORIGINS`, o se pruebe cada feature contra un backend propio de desarrollo —
+   para la entrega del curso alcanza con configurar la URL de producción.

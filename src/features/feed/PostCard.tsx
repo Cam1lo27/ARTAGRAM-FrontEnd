@@ -1,16 +1,41 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { motion } from 'framer-motion';
+import { AnimatePresence, motion } from 'framer-motion';
 import { formatDistanceToNow } from 'date-fns';
 import { es } from 'date-fns/locale';
-import { api } from '../../lib/api';
+import { api, extraerMensajeError } from '../../lib/api';
+import { useAuthStore } from '../../lib/authStore';
 import type { LikeResponse, PublicacionDto } from '../../types';
 
-export function PostCard({ publicacion }: { publicacion: PublicacionDto }) {
+interface PostCardProps {
+  publicacion: PublicacionDto;
+  onEliminada?: (id: string) => void;
+}
+
+export function PostCard({ publicacion, onEliminada }: PostCardProps) {
+  const sesion = useAuthStore((s) => s.sesion);
   const [meGusta, setMeGusta] = useState(publicacion.meGusta);
   const [contador, setContador] = useState(publicacion.contadorLikes);
   const [animando, setAnimando] = useState(false);
   const [procesoAbierto, setProcesoAbierto] = useState(false);
+  const [confirmandoBorrado, setConfirmandoBorrado] = useState(false);
+  const [borrando, setBorrando] = useState(false);
+  const [errorBorrado, setErrorBorrado] = useState<string | null>(null);
+
+  const esAutor = sesion?.usuarioId === publicacion.autorId;
+
+  async function eliminar() {
+    setBorrando(true);
+    setErrorBorrado(null);
+    try {
+      await api.delete(`/api/publicaciones/${publicacion.id}`);
+      onEliminada?.(publicacion.id);
+    } catch (err) {
+      setErrorBorrado(extraerMensajeError(err, 'No se pudo eliminar la publicación'));
+      setBorrando(false);
+      setConfirmandoBorrado(false);
+    }
+  }
 
   async function alternarLike() {
     const anteriorMeGusta = meGusta;
@@ -38,10 +63,53 @@ export function PostCard({ publicacion }: { publicacion: PublicacionDto }) {
           </span>
           <span className="text-sm font-medium text-paper group-hover:text-coral">{publicacion.autorNombre}</span>
         </Link>
-        <span className="text-xs text-paper-dim">
-          {formatDistanceToNow(new Date(publicacion.creadoEn), { addSuffix: true, locale: es })}
-        </span>
+        <div className="flex items-center gap-3">
+          <span className="text-xs text-paper-dim">
+            {formatDistanceToNow(new Date(publicacion.creadoEn), { addSuffix: true, locale: es })}
+          </span>
+          {esAutor && (
+            <button
+              onClick={() => setConfirmandoBorrado(true)}
+              title="Eliminar publicación"
+              className="text-paper-dim transition-colors hover:text-coral"
+            >
+              🗑
+            </button>
+          )}
+        </div>
       </div>
+
+      <AnimatePresence>
+        {confirmandoBorrado && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: 'auto' }}
+            exit={{ opacity: 0, height: 0 }}
+            className="overflow-hidden border-b border-coral/30 bg-coral/10 px-5"
+          >
+            <div className="flex flex-wrap items-center justify-between gap-2 py-2.5">
+              <p className="text-sm text-coral-light">¿Eliminar esta publicación? No se puede deshacer.</p>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => setConfirmandoBorrado(false)}
+                  className="rounded-lg px-3 py-1 text-xs font-medium text-paper-muted hover:bg-ink-800"
+                  disabled={borrando}
+                >
+                  Cancelar
+                </button>
+                <button
+                  onClick={eliminar}
+                  className="rounded-lg bg-coral px-3 py-1 text-xs font-medium text-ink-950 hover:bg-coral-dark disabled:opacity-60"
+                  disabled={borrando}
+                >
+                  {borrando ? 'Eliminando…' : 'Sí, eliminar'}
+                </button>
+              </div>
+            </div>
+            {errorBorrado && <p className="pb-2 text-xs text-coral-light">{errorBorrado}</p>}
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       <div className="mt-3">
         <img src={publicacion.obraFinalUrl} alt={publicacion.titulo} className="max-h-[560px] w-full object-cover" loading="lazy" />
